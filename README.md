@@ -18,14 +18,25 @@ make durable_subscriber
 
 ```
 
-Key line that makes this possible is:
+Key lines that makes this possible is:
 ```java
 
+// needed to create durable subs
 connection.setClientID("durable-client-id");
+
+// creates a named, persistent subscription.
+TopicSubscriber subscriber = session.createDurableSubscriber(topic, "durable-sub");
 ```
 
 This identifies the durable subscriber to the broker so it can retain messages while the subscriber is offline. Setting the `clientID` is required for **durable topic subscriptions** in JMS. It tells the broker: "Track this subscriber by name. If they go offline, keep their messages until they reconnect."
 
+The NonDurableSubscriber, by contrast, uses:
+
+```java
+MessageConsumer consumer = session.createConsumer(topic);
+```
+
+Which creates a non-durable subscriber, potentially missing messages.
 
 For further reliability in the face of broker restarts, this can be configured for producers (Publisher.java in our example):
 

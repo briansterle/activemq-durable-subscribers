@@ -6,7 +6,8 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 public class Publisher {
     public static void main(String[] args) throws Exception {
-        ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+        ConnectionFactory factory = new ActiveMQConnectionFactory(  "tcp://localhost:61616"
+);
         Connection connection = factory.createConnection();
         connection.start();
 

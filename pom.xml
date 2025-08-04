@@ -9,8 +9,8 @@
     <version>1.0.0</version>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -18,13 +18,27 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
-            <version>6.1.7</version>
+            <version>6.1.6</version>
         </dependency>
-
         <dependency>
-            <groupId>jakarta.jms</groupId>
-            <artifactId>jakarta.jms-api</artifactId>
-            <version>3.1.0</version>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-broker</artifactId>
+            <version>6.1.6</version>
         </dependency>
     </dependencies>
+
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.14.0</version>
+      <configuration>
+        <release>17</release>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+
+
 </project>

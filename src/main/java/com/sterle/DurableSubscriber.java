@@ -8,7 +8,7 @@ public class DurableSubscriber {
 
         ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
         Connection connection = factory.createConnection();
-        connection.setClientID("durable-client-id");
+        connection.setClientID("DurableSubscriber");
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);

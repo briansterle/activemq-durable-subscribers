@@ -8,12 +8,13 @@ public class NonDurableSubscriber {
     public static void main(String[] args) throws Exception {
         ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
         Connection connection = factory.createConnection();
+        connection.setClientID("NonDurableSubscriber");
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic topic = session.createTopic("demo.topic");
 
-        MessageConsumer consumer = session.createConsumer(topic);
+        MessageConsumer consumer = session.createConsumer(topic); 
 
         System.out.println("Non-Durable subscriber listening for messages...");
         while (true) {

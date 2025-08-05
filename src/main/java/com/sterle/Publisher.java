@@ -9,6 +9,7 @@ public class Publisher {
         ConnectionFactory factory = new ActiveMQConnectionFactory(  "tcp://localhost:61616"
 );
         Connection connection = factory.createConnection();
+        connection.setClientID("Publisher");
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

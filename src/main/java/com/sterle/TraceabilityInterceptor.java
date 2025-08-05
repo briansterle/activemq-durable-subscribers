@@ -11,16 +11,37 @@ import org.apache.activemq.broker.region.Subscription;
 import org.apache.activemq.command.ConsumerInfo;
 import org.apache.activemq.command.Message;
 import org.apache.activemq.command.MessageDispatch;
+import org.apache.activemq.command.ProducerInfo;
 
+import redis.clients.jedis.JedisPooled;
+
+// what do i want to know?
+// who has consumed what particular messageId
+// who has published that particular messageId
 public class TraceabilityInterceptor extends BrokerPluginSupport {
+
+    JedisPooled jedis;
 
     @Override
     public Broker installPlugin(final Broker next) {
         setNext(next);
+        jedis = new JedisPooled("redis", 6379);
         return this;
     }
 
+    @Override
+    public void addProducer(ConnectionContext context, ProducerInfo info) throws Exception {
+        String producerId = info.getProducerId().toString();
+        String clientId = context.getClientId();
+        if (clientId != null) {
+            producerIdToClientId.put(producerId, clientId);
+        }
+        super.addProducer(context, info);
+    }
+
     private final ConcurrentMap<String, String> consumerIdToClientId = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> producerIdToClientId = new ConcurrentHashMap<>();
+
 
     @Override
     public Subscription addConsumer(ConnectionContext context, ConsumerInfo info) throws Exception {
@@ -44,8 +65,8 @@ public class TraceabilityInterceptor extends BrokerPluginSupport {
 
         String clientId = consumerIdToClientId.getOrDefault(consumerId, "unknown");
 
-        System.out.println("Dispatched message " + messageId +
-                " to consumerId=" + consumerId + " (clientID=" + clientId + ") on destination: " + destination);
+        jedis.lpush(messageId + ":consumed", clientId);
+        System.out.println(clientId + " <<< " + messageId);
 
         super.postProcessDispatch(messageDispatch);
     }
@@ -54,7 +75,10 @@ public class TraceabilityInterceptor extends BrokerPluginSupport {
     public void send(ProducerBrokerExchange exchange, Message msg) throws Exception {
         try {
             if (msg != null && msg.getDestination() != null) {
-                System.out.println(">>> Intercepted send to: " + msg.getDestination().getPhysicalName());
+                String producedBy = producerIdToClientId.getOrDefault(msg.getProducerId().toString(), msg.getProducerId().toString());
+                var key = msg.getMessageId().toString() + ":produced";
+                jedis.lpush(key, producedBy);
+                System.out.println(producedBy + " >>> " + key);
             } else {
                 System.out.println(">>> Intercepted send with null destination");
             }

@@ -1,9 +1,8 @@
 <beans
   xmlns="http://www.springframework.org/schema/beans"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="
-    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-    http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                      http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
 
   <!-- Use system properties in this config -->
   <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -16,16 +15,15 @@
   <broker xmlns="http://activemq.apache.org/schema/core" brokerName="localhost" dataDirectory="${activemq.data}">
 
     <plugins>
-        <!-- <loggingBrokerPlugin logAll="true"
+      <!-- <loggingBrokerPlugin logAll="true"
                                logConnectionEvents="true"
                                logSessionEvents="true"
                                logProducerEvents="true"
                                logConsumerEvents="true"/> -->
 
-      <!-- YOUR custom plugin bean (must declare Spring namespace) -->
       <bean xmlns="http://www.springframework.org/schema/beans"
-            id="messageCountingPlugin"
-            class="com.sterle.TraceabilityInterceptor"/>
+        id="traceabilityPlugin"
+        class="com.sterle.TraceabilityInterceptor" />
     </plugins>
 
     <!-- Destination policy -->
@@ -36,6 +34,9 @@
             <pendingMessageLimitStrategy>
               <constantPendingMessageLimitStrategy limit="1000"/>
             </pendingMessageLimitStrategy>
+            <subscriptionRecoveryPolicy>
+              <timedSubscriptionRecoveryPolicy recoverDuration="60000"/>
+            </subscriptionRecoveryPolicy>
           </policyEntry>
         </policyEntries>
       </policyMap>

@@ -6,13 +6,17 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 public class NonDurableSubscriber {
 
     public static void main(String[] args) throws Exception {
+        String topicName = "demo.topic";
+        if (args.length == 1) {
+            topicName = args[0];
+        }
         ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
         Connection connection = factory.createConnection();
         connection.setClientID("NonDurableSubscriber");
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic("demo.topic");
+        Topic topic = session.createTopic(topicName + "?consumer.retroactive=true");
 
         MessageConsumer consumer = session.createConsumer(topic); 
 

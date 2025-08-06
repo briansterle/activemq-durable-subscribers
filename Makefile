@@ -1,8 +1,9 @@
-all: kill start_activemq start_redis publisher
+all: kill start_activemq start_redis log_activemq
 
 # create_network:
 # 	podman network create odb-net
-
+log_activemq:
+	podman logs -f activemq
 
 start_activemq:
 	podman run -d --name activemq \
@@ -12,7 +13,7 @@ start_activemq:
 		-v ./target/activemq-durable-subscribers-1.0.0.jar:/opt/apache-activemq/lib/activemq-durable-subscribers-1.0.0.jar \
 		-v ./lib/jedis-6.0.0.jar:/opt/apache-activemq/lib/jedis-6.0.0.jar \
 		-v ./activemq.xml:/opt/apache-activemq/conf/activemq.xml \
-		apache/activemq-classic:6.1.6 \
+		apache/activemq-classic:6.1.6
 
 start_redis:
 	podman run -d --name redis \

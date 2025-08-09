@@ -30,7 +30,7 @@
     <destinationPolicy>
       <policyMap>
         <policyEntries>
-          <policyEntry topic=">">
+          <policyEntry topic=">" alwaysRetroactive="true">
             <pendingMessageLimitStrategy>
               <constantPendingMessageLimitStrategy limit="1000"/>
             </pendingMessageLimitStrategy>

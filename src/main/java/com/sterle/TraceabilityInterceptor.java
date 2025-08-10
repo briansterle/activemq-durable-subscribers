@@ -1,5 +1,6 @@
 package com.sterle;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -14,6 +15,7 @@ import org.apache.activemq.command.MessageDispatch;
 import org.apache.activemq.command.ProducerInfo;
 
 import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.params.XAddParams;
 
 // what do i want to know?
 // who has consumed what particular messageId
@@ -64,8 +66,8 @@ public class TraceabilityInterceptor extends BrokerPluginSupport {
         String destination = messageDispatch.getDestination().getPhysicalName();
 
         String clientId = consumerIdToClientId.getOrDefault(consumerId, "unknown");
-        var key = "readers:" + messageId;
-        jedis.sadd(key, clientId);
+        var key = "read:" + messageId;
+        jedis.xadd("read", Map.of("reader", clientId, "msg_id", messageId), XAddParams.xAddParams());
         System.out.println(clientId + " <<< " + key);
 
         super.postProcessDispatch(messageDispatch);
@@ -76,9 +78,9 @@ public class TraceabilityInterceptor extends BrokerPluginSupport {
         try {
             if (msg != null && msg.getDestination() != null) {
                 String producedBy = producerIdToClientId.getOrDefault(msg.getProducerId().toString(), msg.getProducerId().toString());
-                var key = "writer:" + msg.getMessageId().toString();
+                var key = "wrote:" + msg.getMessageId().toString();
+                jedis.xadd("wrote", Map.of("writer", producedBy, "msg_id", msg.getMessageId().toString()), XAddParams.xAddParams());
 
-                jedis.set(key, producedBy);
                 System.out.println(producedBy + " >>> " + key);
             } else {
                 System.out.println(">>> Intercepted send with null destination");

@@ -18,14 +18,15 @@ public class Publisher {
         MessageProducer producer = session.createProducer(topic);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-        for (int i = 1; i <= 100; i++) {
-            TextMessage message = session.createTextMessage("Message " + i);
+        int i = 0;
+        while(true) {
+            TextMessage message = session.createTextMessage("Message " + i++);
             producer.send(message);
             System.out.println("Published: " + message.getText());
             Thread.sleep(1000);
         }
 
-        session.close();
-        connection.close();
+        // session.close();
+        // connection.close();
     }
 }

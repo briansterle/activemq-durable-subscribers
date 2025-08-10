@@ -64,9 +64,9 @@ public class TraceabilityInterceptor extends BrokerPluginSupport {
         String destination = messageDispatch.getDestination().getPhysicalName();
 
         String clientId = consumerIdToClientId.getOrDefault(consumerId, "unknown");
-
-        jedis.lpush(messageId + ":consumed", clientId);
-        System.out.println(clientId + " <<< " + messageId);
+        var key = "readers:" + messageId;
+        jedis.sadd(key, clientId);
+        System.out.println(clientId + " <<< " + key);
 
         super.postProcessDispatch(messageDispatch);
     }
@@ -76,8 +76,9 @@ public class TraceabilityInterceptor extends BrokerPluginSupport {
         try {
             if (msg != null && msg.getDestination() != null) {
                 String producedBy = producerIdToClientId.getOrDefault(msg.getProducerId().toString(), msg.getProducerId().toString());
-                var key = msg.getMessageId().toString() + ":produced";
-                jedis.lpush(key, producedBy);
+                var key = "writer:" + msg.getMessageId().toString();
+
+                jedis.set(key, producedBy);
                 System.out.println(producedBy + " >>> " + key);
             } else {
                 System.out.println(">>> Intercepted send with null destination");

@@ -10,6 +10,7 @@ start_activemq:
 		--network odb-net \
 		-p 61616:61616 \
 		-p 8161:8161 \
+		-p 5672:5672 \
 		-v ./target/activemq-durable-subscribers-1.0.0.jar:/opt/apache-activemq/lib/activemq-durable-subscribers-1.0.0.jar \
 		-v ./lib/jedis-6.0.0.jar:/opt/apache-activemq/lib/jedis-6.0.0.jar \
 		-v ./activemq.xml:/opt/apache-activemq/conf/activemq.xml \
@@ -44,3 +45,7 @@ kill:
 
 redis-cli:
 	podman exec -it redis redis-cli
+
+
+xml_publisher:
+	mvn compile exec:java -Dexec.mainClass=com.sterle.XmlPublisher

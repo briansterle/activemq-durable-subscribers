@@ -26,11 +26,13 @@ public class XmlPublisher {
         return -180.0 + (180.0 - (-180.0)) * random.nextDouble(); // -180 to 180
     }
 
-    static final int SERVICE_COUNT = 3;
+    static final int SERVICE_COUNT = 10;
     static final int SYSTEM_COUNT = 1;
 
     static List<UUID> serviceIds = Stream.generate(() -> UUID.randomUUID()).limit(SERVICE_COUNT).toList();
     static List<String> serviceNames = IntStream.rangeClosed(1, SERVICE_COUNT).boxed().map(i -> "Service_" + i)
+            .toList();
+    static List<String> topicNames = IntStream.rangeClosed(1, SERVICE_COUNT).boxed().map(i -> "Entity_" + i)
             .toList();
 
     static List<UUID> systemIds = Stream.generate(() -> UUID.randomUUID()).limit(SYSTEM_COUNT).toList();
@@ -77,21 +79,22 @@ public class XmlPublisher {
 
     public static void main(String[] args) throws Exception {
 
-        var executor = Executors.newFixedThreadPool(10);
+        var executor = Executors.newFixedThreadPool(SERVICE_COUNT * 2);
         for (int i = 0; i < SERVICE_COUNT; i++) {
             for (int j = 0; j < SYSTEM_COUNT; j++) {
                 final int serviceIdx = i;
                 final int systemIdx = j;
+                String topicName = "Entity_" + i;
                 executor.submit(() -> {
                     try {
-                        connPub(serviceIdx, systemIdx);
+                        connPub(serviceIdx, systemIdx, topicName);
                     } catch (JMSException | InterruptedException e) {
                         e.printStackTrace();
                     }
                 });
                 executor.submit(() -> {
                     try {
-                        connSub(serviceIdx);
+                        connSub(serviceIdx, topicName);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -100,8 +103,7 @@ public class XmlPublisher {
         }
     }
 
-    static void connSub(int consumerId) throws Exception {
-        String topicName = "Entity_" + consumerId;
+    static void connSub(int consumerId, String topicName) throws Exception {
         ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
         Connection connection = factory.createConnection();
         var clientId = "ReaderService_" + consumerId;
@@ -109,17 +111,27 @@ public class XmlPublisher {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic(topicName);
-
-        MessageConsumer consumer = session.createConsumer(topic);
-
+        // Topic topic = session.createTopic(topicName);
+        List<MessageConsumer> consumers = topicNames.stream().map(topicNm -> {
+            try {
+                var topic =  session.createTopic(topicNm);
+                return session.createConsumer(topic);
+            } catch (JMSException e) {
+                return null;
+            }
+        }).toList();
+        
+        // MessageConsumer consumer = session.createConsumer(topic);
+        int x = 0;
         System.out.println(clientId + "listening for messages...");
         while (true) {
-            Message message = consumer.receive();
+            int randConsumerIdx = new Random().nextInt(topicNames.size());
+            x++;
+            Message message =  consumers.get(randConsumerIdx).receive();
             if (message instanceof TextMessage textMessage) {
                 var xml = textMessage.getText();
                 EntityMessage msg = xmlMapper.readValue(xml, EntityMessage.class);
-                System.out.printf("%s read msg from %s with entity id %s\n", clientId, msg.messageHeader().serviceId(),
+                System.out.printf("%s read msg #%d from %s with entity id %s\n", clientId, x, msg.messageHeader().serviceId(),
                         msg.messageData().entity().uuid());
             } else if (message != null) {
                 System.out.println("Received non-text message");
@@ -127,7 +139,7 @@ public class XmlPublisher {
         }
     }
 
-    static void connPub(int serviceIdx, int systemIdx) throws JMSException, InterruptedException {
+    static void connPub(int serviceIdx, int systemIdx, String topicName) throws JMSException, InterruptedException {
         var name = serviceNames.get(serviceIdx);
         var sysName = systemNames.get(systemIdx);
 
@@ -137,15 +149,14 @@ public class XmlPublisher {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic("Entity_" + serviceIdx);
+        Topic topic = session.createTopic(topicName);
 
         MessageProducer producer = session.createProducer(topic);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         while (true) {
             TextMessage message = session.createTextMessage(genXmlMsg(serviceIdx, systemIdx));
             producer.send(message);
-            System.out.println("Published: " + message.getText());
-            Thread.sleep(1000);
+            Thread.sleep(200);
         }
     }
 }
